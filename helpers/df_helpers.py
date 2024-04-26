@@ -1,6 +1,12 @@
 import uuid
 import pandas as pd
 import numpy as np
+
+from tqdm.auto import tqdm
+
+# Initialize pandas to use tqdm based methods
+tqdm.pandas()
+
 from .prompts import extractConcepts
 from .prompts import graphPrompt
 
@@ -21,7 +27,7 @@ def documents2Dataframe(documents) -> pd.DataFrame:
 
 def df2ConceptsList(dataframe: pd.DataFrame) -> list:
     # dataframe.reset_index(inplace=True)
-    results = dataframe.apply(
+    results = dataframe.progress_apply(
         lambda row: extractConcepts(
             row.text, {"chunk_id": row.chunk_id, "type": "concept"}
         ),
@@ -49,13 +55,19 @@ def concepts2Df(concepts_list) -> pd.DataFrame:
 
 def df2Graph(dataframe: pd.DataFrame, model=None) -> list:
     # dataframe.reset_index(inplace=True)
-    results = dataframe.apply(
+    results = dataframe.progress_apply(
         lambda row: graphPrompt(row.text, {"chunk_id": row.chunk_id}, model), axis=1
     )
+    results_with_none = results.shape[0]
+    
     # invalid json results in NaN
     results = results.dropna()
     results = results.reset_index(drop=True)
-
+    
+    none_values = results_with_none - results.shape[0]
+    if none_values > 0:
+        print(f"Possibly due to JSON Decode Error, {none_values} chunks have been skipped")
+    
     ## Flatten the list of lists to one single list of entities.
     concept_list = np.concatenate(results).ravel().tolist()
     return concept_list

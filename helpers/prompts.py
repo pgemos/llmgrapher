@@ -3,7 +3,7 @@ from yachalk import chalk
 sys.path.append("..")
 
 import json
-import ollama.client as client
+import ollama
 
 
 def extractConcepts(prompt: str, metadata={}, model="mistral-openorca:latest"):
@@ -22,7 +22,7 @@ def extractConcepts(prompt: str, metadata={}, model="mistral-openorca:latest"):
         "{ }, \n"
         "]\n"
     )
-    response, _ = client.generate(model_name=model, system=SYS_PROMPT, prompt=prompt)
+    response, _ = client.generate(model=model, system=SYS_PROMPT, prompt=prompt)
     try:
         result = json.loads(response)
         result = [dict(item, **metadata) for item in result]
@@ -32,11 +32,11 @@ def extractConcepts(prompt: str, metadata={}, model="mistral-openorca:latest"):
     return result
 
 
-def graphPrompt(input: str, metadata={}, model="mistral-openorca:latest"):
+def graphPrompt(input: str, metadata={}, model="mistral-openorca:latest", silent=True):
     if model == None:
         model = "mistral-openorca:latest"
 
-    # model_info = client.show(model_name=model)
+    # model_info = client.show(model=model)
     # print( chalk.blue(model_info))
 
     SYS_PROMPT = (
@@ -63,11 +63,15 @@ def graphPrompt(input: str, metadata={}, model="mistral-openorca:latest"):
     )
 
     USER_PROMPT = f"context: ```{input}``` \n\n output: "
-    response, _ = client.generate(model_name=model, system=SYS_PROMPT, prompt=USER_PROMPT)
+    response_dict = ollama.generate(model=model, system=SYS_PROMPT, prompt=USER_PROMPT)
+    response = response_dict["response"]
     try:
         result = json.loads(response)
         result = [dict(item, **metadata) for item in result]
-    except:
-        print("\n\nERROR ### Here is the buggy response: ", response, "\n\n")
+    except json.decoder.JSONDecodeError as e:
+        if not silent:
+            print("\n\n JSON Parse ERROR ### Input : ", input[:50], "...\n\n")
         result = None
+    except Exception as e:
+        print("Unexpected Exception:\n", e)
     return result
