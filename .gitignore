@@ -1,7 +1,33 @@
 ### Custom ###
+# GitHub
+.github/
 
-# Ignore 7z archives
+# Archives #
+*.zip
+*.zipx
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.rar
 *.7z
+*.iso
+*.img
+*.dmg
+*.msi
+*.jar
+*.war
+*.ear
+*.gz
+*.bz2
+*.Z
+*.cpio
+*.arj
+*.cab
+*.lzh
+*.lha
+*.xar
+*.zoo
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,jupyternotebooks
@@ -47,6 +73,7 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.whl
 MANIFEST
 
 # PyInstaller
