@@ -1,4 +1,4 @@
-name: knowledge-graph
+name: llmgrapher
 channels:
   - conda-forge
   - defaults
