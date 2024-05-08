@@ -42,6 +42,15 @@
 ## Ver. 0.0.2
 
 ### New Features
-- [ ] Have a standalone .py file that can be invoked from command-line and which can automatically load files in either `txt`, `html` or `pdf` form and extract (entity1, relatonship, entity2) triplets or produce an `html` file containing a graph visualization.
+- [x] Create a new branch `productionize-dev` which will be a work-in-progress branch to be pulled when work is done and merged to `productionze` branch.
 - [ ] (Vague) Continue using Jupyter Notebooks for Experimentation and Testing. Store these notebooks inside a separate folder.
 - [ ] Adopt a standard way of building a .py project. Use [Cookiecutter Data Science V2](https://github.com/drivendata/cookiecutter-data-science/tree/v2)
+    - [ ] Organize files accordingly.
+    - [ ] Change file paths in code accordingly
+- [x] Clean-up unnecessary files
+
+## Ver. 0.0.3
+
+### New Features
+- [ ] Have a standalone .py file that can be invoked from command-line and which can automatically load files in either `txt`, `html` or `pdf` form and extract (entity1, relatonship, entity2) triplets or produce an `html` file containing a graph visualization.
+- [ ] 
