@@ -15,7 +15,6 @@ dependencies:
   - pyvis>=0.3.1
   - tqdm>=4.38
   - yachalk>=0.1.5
-  - jupyterlab-git>=0.50.0
   - pyarrow>=15.0.2
   - pip:
     - unstructured>=0.10.30
