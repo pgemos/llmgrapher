@@ -16,7 +16,8 @@ LLM based text to graph
 │   ├── processed      <- The final, canonical data sets for modeling.
 │   └── raw            <- The original, immutable data dump.
 │
-├── docs               <- A default mkdocs project; see mkdocs.org for details
+├── docs               <- Any documentation accompanying the project, whether is directly connected to it
+│                         like a software manual or indirectly connected to it like a task backlog.
 │
 ├── models             <- Trained and serialized models, model predictions, or model summaries
 │
@@ -33,9 +34,9 @@ LLM based text to graph
 │   └── figures        <- Generated graphics and figures to be used in reporting
 │
 ├── environment.yml    <- Used to create the conda environment with all the required
-|                         depenencies to run this project's code. To create it, run:
-|                         `conda env create -f environment.yaml` and to activate it:
-|                         `conda activate llmgrapher`
+│                         depenencies to run this project's code. To create it, run:
+│                         `conda env create -f environment.yaml` and to activate it:
+│                         `conda activate llmgrapher`
 │
 ├── setup.cfg          <- Configuration file for flake8
 │
