@@ -282,7 +282,7 @@ for index, row in colors.iterrows():
 
 
 
-graph_output_directory = "../graphs/graph.html"
+graph_output_directory = "./graphs/graph.html"
 
 net = Network(
     notebook=False,
