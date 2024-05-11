@@ -43,16 +43,16 @@ logging.basicConfig(
 
 ## Input data directory
 data_dir = "ag_news"
-inputdirectory = Path(f"./data/input/{data_dir}")
+inputdirectory = Path(f"./data/raw/input/{data_dir}")
 ## This is where the output csv files will be written
 out_dir = data_dir
-outputdirectory = Path(f"./data/output/{out_dir}")
+outputdirectory = Path(f"./data/interim/output/{out_dir}")
 
 
 # In[2]:
 
 
-ag_news = pd.read_csv("data/ag_news_train.csv", header=None)
+ag_news = pd.read_csv("data/raw/ag_news_train.csv", header=None)
 
 
 # In[3]:
@@ -65,7 +65,7 @@ ag_news_txt = ag_news[2].iloc[:50].str.cat(sep="\n")
 # In[4]:
 
 
-with open("data/input/ag_news/ag_news.txt", "w") as f:
+with open("data/raw/input/ag_news/ag_news.txt", "w") as f:
     f.write(ag_news_txt)
 
 
