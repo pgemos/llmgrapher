@@ -23,15 +23,12 @@ dependencies:
   - isort
   - typer
   - loguru
+  - python-dotenv
+  - mkdocs
   # CCDS END #
   - pip:
     - unstructured>=0.10.30
     # Uncomment below line and comment the above to include all supported documents in the unstructured library
     # - unstructured[all-docs]>=0.10.30
     - ollama>=0.1.7
-    # CCDS START #
-    # Added due to adopting Cookiecutter Data Science V2 template
-    - python-dotenv
-    - mkdocs
-    - -e .
-    # CCDS END #
+    # - -e .
