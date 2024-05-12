@@ -23,15 +23,17 @@ from pyvis.network import Network
 
 import logging
 
+from helpers.df_helpers import df2Graph, graph2Df, documents2Dataframe
+
 # Logger setup
 logger = logging.getLogger("__name__")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)  # only log the current logger in DEBUG mode
 logging.basicConfig(
-    level=logging.CRITICAL,
+    level=logging.CRITICAL,  # show only CRITICAL messages from other loggers
     format="%(asctime)s [%(levelname)s] %(message)s",
     encoding="utf-8",
-    handlers=[
-        logging.FileHandler("extract_graph.log"),
+    handlers=[    # output log messages to both file and stdout
+        logging.FileHandler("logs/extract_graph.log"),
         logging.StreamHandler(sys.stdout)
     ]
 )
