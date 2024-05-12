@@ -1,1 +1,1 @@
-import config  # noqa: F401
+import llmgrapher.config as config  # noqa: F401
