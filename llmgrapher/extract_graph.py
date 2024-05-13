@@ -119,35 +119,6 @@ logger.debug("Shape and head of produced graph as a dataframe:\n"
              + str(dfg1.head()) + "\n")
 
 
-# ## Calculating contextual proximity
-
-
-def contextual_proximity(df: pd.DataFrame) -> pd.DataFrame:
-    ## Melt the dataframe into a list of nodes
-    dfg_long = pd.melt(
-        df, id_vars=["chunk_id"], value_vars=["node_1", "node_2"], value_name="node"
-    )
-    dfg_long.drop(columns=["variable"], inplace=True)
-    # Self join with chunk id as the key will create a link between terms occuring in the same text chunk.
-    dfg_wide = pd.merge(dfg_long, dfg_long, on="chunk_id", suffixes=("_1", "_2"))
-    # drop self loops
-    self_loops_drop = dfg_wide[dfg_wide["node_1"] == dfg_wide["node_2"]].index
-    dfg2 = dfg_wide.drop(index=self_loops_drop).reset_index(drop=True)
-    ## Group and count edges.
-    dfg2 = (
-        dfg2.groupby(["node_1", "node_2"])
-        .agg({"chunk_id": [",".join, "count"]})
-        .reset_index()
-    )
-    dfg2.columns = ["node_1", "node_2", "chunk_id", "count"]
-    dfg2.replace("", np.nan, inplace=True)
-    dfg2.dropna(subset=["node_1", "node_2"], inplace=True)
-    # Drop edges with 1 count
-    dfg2 = dfg2[dfg2["count"] != 1]
-    dfg2["edge"] = "contextual proximity"
-    return dfg2
-
-
 dfg2 = contextual_proximity(dfg1)
 dfg2.tail()
 
@@ -161,7 +132,6 @@ dfg = (
     .agg({"chunk_id": ",".join, "edge": ','.join, 'count': 'sum'})
     .reset_index()
 )
-dfg
 
 
 # ## Calculate the NetworkX Graph
@@ -188,10 +158,7 @@ for index, row in dfg.iterrows():
         weight=row['count']/4
     )
 
-
-# ### Calculate communities for coloring the nodes
-
-
+# Calculate communities for coloring the nodes
 
 communities_generator = nx.community.girvan_newman(G)
 top_level_communities = next(communities_generator)
@@ -201,34 +168,8 @@ logger.debug("Number of Communities = " + str(len(communities)) + "\n"
              + "Communities found:\n" + str(communities) +"\n")
 
 
-# ### Create a dataframe for community colors
-
-
-palette = "hls"
-
-## Now add these colors to communities and make another dataframe
-def colors2Community(communities) -> pd.DataFrame:
-    ## Define a color palette
-    p = sns.color_palette(palette, len(communities)).as_hex()
-    random.shuffle(p)
-    rows = []
-    group = 0
-    for community in communities:
-        color = p.pop()
-        group += 1
-        for node in community:
-            rows.append({"node": node, "color": color, "group": group})
-    df_colors = pd.DataFrame(rows)
-    return df_colors
-
-
+# Add colors to the graph
 colors = colors2Community(communities)
-colors
-
-
-# ### Add colors to the graph
-
-
 for index, row in colors.iterrows():
     G.nodes[row['node']]['group'] = row['group']
     G.nodes[row['node']]['color'] = row['color']
@@ -253,5 +194,45 @@ net.from_nx(G)
 net.force_atlas_2based(central_gravity=0.015, gravity=-31)
 # net.barnes_hut(gravity=-18100, central_gravity=5.05, spring_length=380)
 net.show_buttons(filter_=["physics"])
-
 net.show(graph_output_directory)
+
+
+### Functions ###
+
+def colors2Community(communities, pallete="hls") -> pd.DataFrame:
+    p = sns.color_palette(palette, len(communities)).as_hex()
+    random.shuffle(p)
+    rows = []
+    group = 0
+    for community in communities:
+        color = p.pop()
+        group += 1
+        for node in community:
+            rows.append({"node": node, "color": color, "group": group})
+    df_colors = pd.DataFrame(rows)
+    return df_colors
+
+def contextual_proximity(df: pd.DataFrame) -> pd.DataFrame:
+    ## Melt the dataframe into a list of nodes
+    dfg_long = pd.melt(
+        df, id_vars=["chunk_id"], value_vars=["node_1", "node_2"], value_name="node"
+    )
+    dfg_long.drop(columns=["variable"], inplace=True)
+    # Self join with chunk id as the key will create a link between terms occuring in the same text chunk.
+    dfg_wide = pd.merge(dfg_long, dfg_long, on="chunk_id", suffixes=("_1", "_2"))
+    # drop self loops
+    self_loops_drop = dfg_wide[dfg_wide["node_1"] == dfg_wide["node_2"]].index
+    dfg2 = dfg_wide.drop(index=self_loops_drop).reset_index(drop=True)
+    ## Group and count edges.
+    dfg2 = (
+        dfg2.groupby(["node_1", "node_2"])
+        .agg({"chunk_id": [",".join, "count"]})
+        .reset_index()
+    )
+    dfg2.columns = ["node_1", "node_2", "chunk_id", "count"]
+    dfg2.replace("", np.nan, inplace=True)
+    dfg2.dropna(subset=["node_1", "node_2"], inplace=True)
+    # Drop edges with 1 count
+    dfg2 = dfg2[dfg2["count"] != 1]
+    dfg2["edge"] = "contextual proximity"
+    return dfg2
