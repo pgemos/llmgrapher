@@ -15,10 +15,20 @@ dependencies:
   - pyvis>=0.3.1
   - tqdm>=4.38
   - yachalk>=0.1.5
-  - jupyterlab-git>=0.50.0
   - pyarrow>=15.0.2
+  # CCDS START #
+  # Added due to adopting Cookiecutter Data Science V2 template
+  - black
+  - flake8
+  - isort
+  - typer
+  - loguru
+  - python-dotenv
+  - mkdocs
+  # CCDS END #
   - pip:
     - unstructured>=0.10.30
     # Uncomment below line and comment the above to include all supported documents in the unstructured library
     # - unstructured[all-docs]>=0.10.30
     - ollama>=0.1.7
+    # - -e .

@@ -1,26 +1,32 @@
-[tool.poetry]
-name = "knowlege-graph"
-version = "0.1.0"
-description = ""
-authors = ["Nayak <rahul.nyk@gmail.com>"]
-readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.11"
-langchain = "^0.0.335"
-pandas = "^2.1.3"
-numpy = "^1.26.2"
-pypdf = "^3.17.0"
-unstructured = "^0.10.30"
-pathlib = "^1.0.1"
-networkx = "^3.2.1"
-pyvis = "^0.3.2"
-seaborn = "^0.13.0"
-uuid = "^1.30"
-jupyterlab = "^4.0.8"
-yachalk = "^0.1.5"
-
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "llmgrapher"
+version = "0.0.1"
+description = "LLM based text to graph"
+authors = [
+  { name = "pgemos" },
+]
+
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    
+]
+requires-python = "~=3.11"
+
+[tool.black]
+line-length = 99
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+)/
+'''
+
+[tool.ruff.lint.isort]
+known_first_party = ["llmgrapher"]
+force_sort_within_sections = true

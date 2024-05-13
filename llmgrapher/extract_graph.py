@@ -3,9 +3,6 @@
 
 # ## Setup
 
-# In[1]:
-
-
 import pandas as pd
 import numpy as np
 import os
@@ -16,63 +13,47 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pathlib import Path
 import random
 
-from helpers.df_helpers import documents2Dataframe
-from helpers.df_helpers import df2Graph
-from helpers.df_helpers import graph2Df
-
 import networkx as nx
 import seaborn as sns
 from pyvis.network import Network
 
 import logging
 
+from helpers.df_helpers import df2Graph, graph2Df, documents2Dataframe
+
 # Logger setup
 logger = logging.getLogger("__name__")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)  # only log the current logger in DEBUG mode
 logging.basicConfig(
-    level=logging.CRITICAL,
+    level=logging.CRITICAL,  # show only CRITICAL messages from other loggers
     format="%(asctime)s [%(levelname)s] %(message)s",
     encoding="utf-8",
-    handlers=[
-        logging.FileHandler("extract_graph.log"),
+    handlers=[    # output log messages to both file and stdout
+        logging.FileHandler("logs/extract_graph.log"),
         logging.StreamHandler(sys.stdout)
     ]
 )
 
 
-
 ## Input data directory
 data_dir = "ag_news"
-inputdirectory = Path(f"./data/input/{data_dir}")
+inputdirectory = Path(f"./data/raw/input/{data_dir}")
 ## This is where the output csv files will be written
 out_dir = data_dir
-outputdirectory = Path(f"./data/output/{out_dir}")
+outputdirectory = Path(f"./data/interim/output/{out_dir}")
 
 
-# In[2]:
-
-
-ag_news = pd.read_csv("data/ag_news_train.csv", header=None)
-
-
-# In[3]:
-
+ag_news = pd.read_csv("data/raw/ag_news_train.csv", header=None)
 
 # ag_news_txt = ag_news[2].str.cat(sep="\n")
 ag_news_txt = ag_news[2].iloc[:50].str.cat(sep="\n")
 
 
-# In[4]:
-
-
-with open("data/input/ag_news/ag_news.txt", "w") as f:
+with open("data/raw/input/ag_news/ag_news.txt", "w") as f:
     f.write(ag_news_txt)
 
 
 # ## Load Documents
-
-# In[5]:
-
 
 ## Dir PDF Loader
 # loader = PyPDFDirectoryLoader(inputdirectory)
@@ -95,9 +76,6 @@ logger.debug("Example of a chunk (No3):\n" + pages[3].page_content)
 
 # ## Create a dataframe of all the chunks
 
-# In[6]:
-
-
 
 df = documents2Dataframe(pages)
 logger.debug("Dataframe of chunks:\n"
@@ -106,9 +84,6 @@ logger.debug("Dataframe of chunks:\n"
 
 
 # ## Extract Concepts
-
-# In[7]:
-
 
 
 # If regenerate is set to True then the dataframes are regenerated and Both the dataframes are written in the csv format so we dont have to calculate them again. 
@@ -119,9 +94,6 @@ logger.debug("Dataframe of chunks:\n"
 # 
 # 
 # Else the dataframes are read from the output directory
-
-# In[8]:
-
 
 ## To regenerate the graph with LLM, set this to True
 regenerate = True
@@ -148,8 +120,6 @@ logger.debug("Shape and head of produced graph as a dataframe:\n"
 
 
 # ## Calculating contextual proximity
-
-# In[9]:
 
 
 def contextual_proximity(df: pd.DataFrame) -> pd.DataFrame:
@@ -184,8 +154,6 @@ dfg2.tail()
 
 # ### Merge both the dataframes
 
-# In[10]:
-
 
 dfg = pd.concat([dfg1, dfg2], axis=0)
 dfg = (
@@ -198,15 +166,9 @@ dfg
 
 # ## Calculate the NetworkX Graph
 
-# In[11]:
-
 
 nodes = pd.concat([dfg['node_1'], dfg['node_2']], axis=0).unique()
 nodes.shape
-
-
-# In[12]:
-
 
 
 G = nx.Graph()
@@ -229,7 +191,6 @@ for index, row in dfg.iterrows():
 
 # ### Calculate communities for coloring the nodes
 
-# In[13]:
 
 
 communities_generator = nx.community.girvan_newman(G)
@@ -241,8 +202,6 @@ logger.debug("Number of Communities = " + str(len(communities)) + "\n"
 
 
 # ### Create a dataframe for community colors
-
-# In[14]:
 
 
 palette = "hls"
@@ -269,8 +228,6 @@ colors
 
 # ### Add colors to the graph
 
-# In[15]:
-
 
 for index, row in colors.iterrows():
     G.nodes[row['node']]['group'] = row['group']
@@ -278,11 +235,7 @@ for index, row in colors.iterrows():
     G.nodes[row['node']]['size'] = G.degree[row['node']]
 
 
-# In[16]:
-
-
-
-graph_output_directory = "./ui/graph.html"
+graph_output_directory = "./reports/graphs/graph.html"
 
 net = Network(
     notebook=False,
@@ -302,10 +255,3 @@ net.force_atlas_2based(central_gravity=0.015, gravity=-31)
 net.show_buttons(filter_=["physics"])
 
 net.show(graph_output_directory)
-
-
-# In[ ]:
-
-
-
-

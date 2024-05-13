@@ -2,6 +2,14 @@
 # GitHub
 .github/
 
+# Old files
+*.old
+
+# Logs
+*.log
+logs/*
+!logs/.gitkeep
+
 # Archives #
 *.zip
 *.zipx
@@ -31,6 +39,7 @@
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,jupyternotebooks
+# NOTE: The below gitignore contents created by toptal have been modified to adjust the project's needs.
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
@@ -106,7 +115,6 @@ cover/
 *.pot
 
 # Django stuff:
-*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal

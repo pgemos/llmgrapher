@@ -1,0 +1,486 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/css/tom-select.min.css" integrity="sha512-43fHB3GLgZfz8QXl1RPQ8O66oIgv3po9cJ5erMt1c4QISq9dYb195T3vr5ImnJPXuVroKcGBPXBFKETW8jrPNQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/js/tom-select.complete.js" integrity="sha512-jeF9CfnvzDiw9G9xiksVjxR2lib44Gnovvkv+3CgCG6NXCD4gqlA5nDAVW5WjpA+i+/zKsUWV5xNEbW1X/HH0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 900px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+             #config {
+                 float: left;
+                 width: 400px;
+                 height: 600px;
+             }
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+                <div id="select-menu" class="card-header">
+                    <div class="row no-gutters">
+                        <div class="col-10 pb-2">
+                            <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="selectNode([value]);"
+                            id="select-node"
+                            placeholder="Select node..."
+                            >
+                                <option selected>Select a Node by ID</option>
+                                
+                                    <option value="annual base salary">annual base salary</option>
+                                
+                                    <option value="crude prices">crude prices</option>
+                                
+                                    <option value="danny bazil riley">danny bazil riley</option>
+                                
+                                    <option value="purnomo yusgiantoro">purnomo yusgiantoro</option>
+                                
+                                    <option value="stock market">stock market</option>
+                                
+                                    <option value="bill gates">bill gates</option>
+                                
+                                    <option value="central square in lynn">central square in lynn</option>
+                                
+                                    <option value="curbs">curbs</option>
+                                
+                                    <option value="fences">fences</option>
+                                
+                                    <option value="former employees">former employees</option>
+                                
+                                    <option value="gateway artisan block">gateway artisan block</option>
+                                
+                                    <option value="landscaping">landscaping</option>
+                                
+                                    <option value="lights">lights</option>
+                                
+                                    <option value="lynn">lynn</option>
+                                
+                                    <option value="marlborough-based technology company">marlborough-based technology company</option>
+                                
+                                    <option value="praise">praise</option>
+                                
+                                    <option value="road improvements">road improvements</option>
+                                
+                                    <option value="sidewalks">sidewalks</option>
+                                
+                                    <option value="state grant money">state grant money</option>
+                                
+                                    <option value="temper">temper</option>
+                                
+                                    <option value="turned the corner">turned the corner</option>
+                                
+                                    <option value="u-turn">u-turn</option>
+                                
+                                    <option value="us economy">us economy</option>
+                                
+                                    <option value="dell">dell</option>
+                                
+                                    <option value="gary winnick">gary winnick</option>
+                                
+                                    <option value="global crossing">global crossing</option>
+                                
+                                    <option value="government">government</option>
+                                
+                                    <option value="kevin b. rollins">kevin b. rollins</option>
+                                
+                                    <option value="oil">oil</option>
+                                
+                                    <option value="russia">russia</option>
+                                
+                                    <option value="stein">stein</option>
+                                
+                                    <option value="financial planner">financial planner</option>
+                                
+                                    <option value="forbes.com">forbes.com</option>
+                                
+                                    <option value="ipo">ipo</option>
+                                
+                                    <option value="iran's opec governor">iran's opec governor</option>
+                                
+                                    <option value="new york">new york</option>
+                                
+                                    <option value="non-opec oil exporters">non-opec oil exporters</option>
+                                
+                                    <option value="opec president">opec president</option>
+                                
+                                    <option value="oversupply">oversupply</option>
+                                
+                                    <option value="short-sellers">short-sellers</option>
+                                
+                            </select>
+                        </div>
+                        <div class="col-2 pb-2">
+                            <button type="button" class="btn btn-primary btn-block" onclick="neighbourhoodHighlight({nodes: []});">Reset Selection</button>
+                        </div>
+                    </div>
+                </div>
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+            <div id="config"></div>
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+                  new TomSelect("#select-node",{
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      }
+                  });
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"group": 1, "id": "annual base salary", "label": "annual base salary", "shape": "dot", "size": 4}, {"group": 1, "id": "crude prices", "label": "crude prices", "shape": "dot", "size": 13}, {"group": 1, "id": "danny bazil riley", "label": "danny bazil riley", "shape": "dot", "size": 13}, {"group": 1, "id": "purnomo yusgiantoro", "label": "purnomo yusgiantoro", "shape": "dot", "size": 13}, {"group": 1, "id": "stock market", "label": "stock market", "shape": "dot", "size": 13}, {"group": 2, "id": "bill gates", "label": "bill gates", "shape": "dot", "size": 17}, {"group": 2, "id": "central square in lynn", "label": "central square in lynn", "shape": "dot", "size": 25}, {"group": 2, "id": "curbs", "label": "curbs", "shape": "dot", "size": 3}, {"group": 2, "id": "fences", "label": "fences", "shape": "dot", "size": 3}, {"group": 2, "id": "former employees", "label": "former employees", "shape": "dot", "size": 4}, {"group": 2, "id": "gateway artisan block", "label": "gateway artisan block", "shape": "dot", "size": 4}, {"group": 2, "id": "landscaping", "label": "landscaping", "shape": "dot", "size": 3}, {"group": 2, "id": "lights", "label": "lights", "shape": "dot", "size": 3}, {"group": 2, "id": "lynn", "label": "lynn", "shape": "dot", "size": 5}, {"group": 2, "id": "marlborough-based technology company", "label": "marlborough-based technology company", "shape": "dot", "size": 4}, {"group": 2, "id": "praise", "label": "praise", "shape": "dot", "size": 3}, {"group": 2, "id": "road improvements", "label": "road improvements", "shape": "dot", "size": 3}, {"group": 2, "id": "sidewalks", "label": "sidewalks", "shape": "dot", "size": 3}, {"group": 2, "id": "state grant money", "label": "state grant money", "shape": "dot", "size": 4}, {"group": 2, "id": "temper", "label": "temper", "shape": "dot", "size": 3}, {"group": 2, "id": "turned the corner", "label": "turned the corner", "shape": "dot", "size": 3}, {"group": 2, "id": "u-turn", "label": "u-turn", "shape": "dot", "size": 3}, {"group": 2, "id": "us economy", "label": "us economy", "shape": "dot", "size": 17}, {"group": 3, "id": "dell", "label": "dell", "shape": "dot", "size": 2}, {"group": 4, "id": "gary winnick", "label": "gary winnick", "shape": "dot", "size": 2}, {"group": 4, "id": "global crossing", "label": "global crossing", "shape": "dot", "size": 2}, {"group": 2, "id": "government", "label": "government", "shape": "dot", "size": 2}, {"group": 3, "id": "kevin b. rollins", "label": "kevin b. rollins", "shape": "dot", "size": 2}, {"group": 2, "id": "oil", "label": "oil", "shape": "dot", "size": 2}, {"group": 2, "id": "russia", "label": "russia", "shape": "dot", "size": 2}, {"group": 2, "id": "stein", "label": "stein", "shape": "dot", "size": 2}, {"group": 1, "id": "financial planner", "label": "financial planner", "shape": "dot", "size": 4}, {"group": 1, "id": "forbes.com", "label": "forbes.com", "shape": "dot", "size": 5}, {"group": 1, "id": "ipo", "label": "ipo", "shape": "dot", "size": 5}, {"group": 1, "id": "iran\u0027s opec governor", "label": "iran\u0027s opec governor", "shape": "dot", "size": 4}, {"group": 1, "id": "new york", "label": "new york", "shape": "dot", "size": 4}, {"group": 1, "id": "non-opec oil exporters", "label": "non-opec oil exporters", "shape": "dot", "size": 4}, {"group": 1, "id": "opec president", "label": "opec president", "shape": "dot", "size": 4}, {"group": 1, "id": "oversupply", "label": "oversupply", "shape": "dot", "size": 4}, {"group": 1, "id": "short-sellers", "label": "short-sellers", "shape": "dot", "size": 4}]);
+                  edges = new vis.DataSet([{"from": "annual base salary", "title": "contextual proximity", "to": "crude prices", "width": 0.5}, {"from": "annual base salary", "title": "contextual proximity", "to": "danny bazil riley", "width": 0.5}, {"from": "annual base salary", "title": "contextual proximity", "to": "purnomo yusgiantoro", "width": 0.5}, {"from": "annual base salary", "title": "contextual proximity", "to": "stock market", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "central square in lynn", "width": 3.5}, {"from": "bill gates", "title": "contextual proximity", "to": "curbs", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "fences", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "former employees", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "gateway artisan block", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "landscaping", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "lights", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "lynn", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "marlborough-based technology company", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "praise", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "road improvements", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "sidewalks", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "state grant money", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "temper", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "turned the corner", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "u-turn", "width": 0.5}, {"from": "bill gates", "title": "contextual proximity", "to": "us economy", "width": 1.0}, {"from": "central square in lynn", "title": "contextual proximity", "to": "curbs", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "dell", "width": 0.5}, {"from": "central square in lynn", "title": "contextual proximity", "to": "fences", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "former employees", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "gary winnick", "width": 0.5}, {"from": "central square in lynn", "title": "Gateway Artisan Block, a key area of the square,,contextual proximity", "to": "gateway artisan block", "width": 3.25}, {"from": "central square in lynn", "title": "contextual proximity", "to": "global crossing", "width": 0.5}, {"from": "central square in lynn", "title": "contextual proximity", "to": "government", "width": 0.5}, {"from": "central square in lynn", "title": "contextual proximity", "to": "kevin b. rollins", "width": 0.5}, {"from": "central square in lynn", "title": "contextual proximity", "to": "landscaping", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "lights", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "lynn", "width": 2.25}, {"from": "central square in lynn", "title": "contextual proximity", "to": "marlborough-based technology company", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "oil", "width": 0.5}, {"from": "central square in lynn", "title": "contextual proximity", "to": "praise", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "road improvements", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "russia", "width": 0.5}, {"from": "central square in lynn", "title": "contextual proximity", "to": "sidewalks", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "state grant money", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "stein", "width": 0.5}, {"from": "central square in lynn", "title": "contextual proximity", "to": "temper", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "turned the corner", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "u-turn", "width": 1.75}, {"from": "central square in lynn", "title": "contextual proximity", "to": "us economy", "width": 3.5}, {"from": "crude prices", "title": "contextual proximity", "to": "danny bazil riley", "width": 1.0}, {"from": "crude prices", "title": "contextual proximity", "to": "financial planner", "width": 0.5}, {"from": "crude prices", "title": "contextual proximity", "to": "forbes.com", "width": 0.5}, {"from": "crude prices", "title": "contextual proximity", "to": "ipo", "width": 0.5}, {"from": "crude prices", "title": "contextual proximity", "to": "iran\u0027s opec governor", "width": 0.5}, {"from": "crude prices", "title": "contextual proximity", "to": "new york", "width": 0.5}, {"from": "crude prices", "title": "The fifth article suggests that Non-OPEC oil exporters should consider increasing output to cool record crude prices, indicating a relation between Non-OPEC Oil Exporters and Crude Prices.,contextual proximity", "to": "non-opec oil exporters", "width": 1.5}, {"from": "crude prices", "title": "contextual proximity", "to": "opec president", "width": 0.5}, {"from": "crude prices", "title": "contextual proximity", "to": "oversupply", "width": 0.5}, {"from": "crude prices", "title": "contextual proximity", "to": "purnomo yusgiantoro", "width": 1.0}, {"from": "crude prices", "title": "contextual proximity", "to": "short-sellers", "width": 0.5}, {"from": "crude prices", "title": "contextual proximity", "to": "stock market", "width": 1.0}, {"from": "curbs", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "danny bazil riley", "title": "The first article also mentions a financial planner who stopped by Danny Bazil Riley\u0027s desk to drop off insurance brochures, implying a relation between Financial Planner and Danny Bazil Riley.,contextual proximity", "to": "financial planner", "width": 1.5}, {"from": "danny bazil riley", "title": "contextual proximity", "to": "forbes.com", "width": 0.5}, {"from": "danny bazil riley", "title": "contextual proximity", "to": "ipo", "width": 0.5}, {"from": "danny bazil riley", "title": "contextual proximity", "to": "iran\u0027s opec governor", "width": 0.5}, {"from": "danny bazil riley", "title": "contextual proximity", "to": "new york", "width": 0.5}, {"from": "danny bazil riley", "title": "contextual proximity", "to": "non-opec oil exporters", "width": 0.5}, {"from": "danny bazil riley", "title": "contextual proximity", "to": "opec president", "width": 0.5}, {"from": "danny bazil riley", "title": "contextual proximity", "to": "oversupply", "width": 0.5}, {"from": "danny bazil riley", "title": "contextual proximity", "to": "purnomo yusgiantoro", "width": 1.0}, {"from": "danny bazil riley", "title": "contextual proximity", "to": "short-sellers", "width": 0.5}, {"from": "danny bazil riley", "title": "contextual proximity", "to": "stock market", "width": 1.0}, {"from": "dell", "title": "Kevin B. Rollins is the new CEO of Dell, who talks about the company\u0027s recent slip in customer service and why he sees a broader technology recovery taking place.", "to": "kevin b. rollins", "width": 1.0}, {"from": "fences", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "financial planner", "title": "contextual proximity", "to": "purnomo yusgiantoro", "width": 0.5}, {"from": "financial planner", "title": "contextual proximity", "to": "stock market", "width": 0.5}, {"from": "forbes.com", "title": "The article mentions Google\u0027s highly anticipated initial public offering, implying a relation between Forbes.com and IPO.", "to": "ipo", "width": 1.0}, {"from": "forbes.com", "title": "contextual proximity", "to": "purnomo yusgiantoro", "width": 0.5}, {"from": "forbes.com", "title": "contextual proximity", "to": "stock market", "width": 0.5}, {"from": "former employees", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "former employees", "title": "is suing five former employees, including three senior managers, for allegedly conspiring against their employer while working on opening a competing business.", "to": "marlborough-based technology company", "width": 1.0}, {"from": "gary winnick", "title": "Gary Winnick was the former chief of Global Crossing, a company that imploded. A lawsuit against Gary Winnick focuses on what he knew about his company\u0027s finances during this time.", "to": "global crossing", "width": 1.0}, {"from": "gateway artisan block", "title": "contextual proximity", "to": "lynn", "width": 0.5}, {"from": "gateway artisan block", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "government", "title": "In light of the country\u0027s current financial state and the desire of rich people to show off their wealth, Stein proposes a unique solution: having the government sell titles of nobility.", "to": "stein", "width": 1.0}, {"from": "ipo", "title": "contextual proximity", "to": "purnomo yusgiantoro", "width": 0.5}, {"from": "ipo", "title": "contextual proximity", "to": "stock market", "width": 0.5}, {"from": "iran\u0027s opec governor", "title": "contextual proximity", "to": "purnomo yusgiantoro", "width": 0.5}, {"from": "iran\u0027s opec governor", "title": "contextual proximity", "to": "stock market", "width": 0.5}, {"from": "landscaping", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "lights", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "lynn", "title": "Given to Lynn last week.", "to": "state grant money", "width": 1.0}, {"from": "lynn", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "marlborough-based technology company", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "new york", "title": "contextual proximity", "to": "purnomo yusgiantoro", "width": 0.5}, {"from": "new york", "title": "contextual proximity", "to": "stock market", "width": 0.5}, {"from": "non-opec oil exporters", "title": "contextual proximity", "to": "purnomo yusgiantoro", "width": 0.5}, {"from": "non-opec oil exporters", "title": "contextual proximity", "to": "stock market", "width": 0.5}, {"from": "oil", "title": "Russia is again emerging as a superpower, with less to do with nuclear weapons and more to do with oil.", "to": "russia", "width": 1.0}, {"from": "opec president", "title": "The third article mentions Purnomo Yusgiantoro as the OPEC President, highlighting a relation between Purnomo Yusgiantoro and OPEC President.,contextual proximity", "to": "purnomo yusgiantoro", "width": 1.5}, {"from": "opec president", "title": "contextual proximity", "to": "stock market", "width": 0.5}, {"from": "oversupply", "title": "contextual proximity", "to": "purnomo yusgiantoro", "width": 0.5}, {"from": "oversupply", "title": "contextual proximity", "to": "stock market", "width": 0.5}, {"from": "praise", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "purnomo yusgiantoro", "title": "contextual proximity", "to": "short-sellers", "width": 0.5}, {"from": "purnomo yusgiantoro", "title": "contextual proximity", "to": "stock market", "width": 1.0}, {"from": "road improvements", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "short-sellers", "title": "contextual proximity", "to": "stock market", "width": 0.5}, {"from": "sidewalks", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "state grant money", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "temper", "title": "contextual proximity", "to": "us economy", "width": 0.5}, {"from": "turned the corner", "title": "President Bush has been saying that the US economy has \u0027turned the corner.\u0027 ,contextual proximity", "to": "us economy", "width": 1.5}, {"from": "u-turn", "title": "Democratic presidential candidate Senator John F. Kerry, in the wake of this month\u0027s poor jobs report, quipped that it was more like a U-turn.,contextual proximity", "to": "us economy", "width": 1.5}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": true,
+        "filter": [
+            "physics"
+        ]
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "forceAtlas2Based": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.015,
+            "damping": 0.4,
+            "gravitationalConstant": -31,
+            "springConstant": 0.08,
+            "springLength": 100
+        },
+        "solver": "forceAtlas2Based",
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+                  // if this network requires displaying the configure window,
+                  // put it in its div
+                  options.configure["container"] = document.getElementById("config");
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+                    network.on("selectNode", neighbourhoodHighlight);
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
