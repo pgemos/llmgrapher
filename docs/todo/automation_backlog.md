@@ -43,10 +43,10 @@
 
 ### New Features
 - [x] Create a new branch `productionize-dev` which will be a work-in-progress branch to be pulled when work is done and merged to `productionze` branch.
-- [ ] (Vague) Continue using Jupyter Notebooks for Experimentation and Testing. Store these notebooks inside a separate folder.
-- [ ] Adopt a standard way of building a .py project. Use [Cookiecutter Data Science V2](https://github.com/drivendata/cookiecutter-data-science/tree/v2)
-    - [ ] Organize files accordingly.
-    - [ ] Change file paths in code accordingly
+- [x] (Vague) Continue using Jupyter Notebooks for Experimentation and Testing. Store these notebooks inside a separate folder.
+- [x] Adopt a standard way of building a .py project. Use [Cookiecutter Data Science V2](https://github.com/drivendata/cookiecutter-data-science/tree/v2)
+    - [x] Organize files accordingly.
+    - [x] Change file paths in code accordingly
 - [x] Clean-up unnecessary files
 
 ## Ver. 0.0.3
