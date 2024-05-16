@@ -1,29 +1,26 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# ## Setup
-
-import pandas as pd
-import numpy as np
-import os
-import sys
-from pathlib import Path
-import random
-import networkx as nx
-import seaborn as sns
-from pyvis.network import Network
+#!/usr/bin/env python3
 import logging
+import os
+import random
+import sys
 
+import networkx as nx
+import numpy as np
+import pandas as pd
+import seaborn as sns
+
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
+    DirectoryLoader,
+    PyPDFDirectoryLoader,
+    PyPDFium2Loader,
     PyPDFLoader,
     UnstructuredPDFLoader,
-    PyPDFium2Loader,
-    PyPDFDirectoryLoader,
-    DirectoryLoader,
 )
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from pathlib import Path
+from pyvis.network import Network
 
-from helpers.df_helpers import df2Graph, graph2Df, documents2Dataframe
+from helpers.df_helpers import df2Graph, documents2Dataframe, graph2Df
 
 # Logger setup
 logger = logging.getLogger("__name__")
@@ -116,10 +113,8 @@ dfg1.dropna(subset=["node_1", "node_2", "edge"], inplace=True)
 dfg1["count"] = 4
 ## Increasing the weight of the relation to 4.
 ## We will assign the weight of 1 when later the contextual proximity will be calculated.
-logger.debug(
-    "Shape and head of produced graph as a dataframe:\n" + str(dfg1.shape) + "\n"
-    + str(dfg1.head()) + "\n"
-)
+logger.debug("Shape and head of produced graph as a dataframe:\n" + str(dfg1.shape) + "\n"
+             + str(dfg1.head()) + "\n")
 
 dfg2 = contextual_proximity(dfg1)
 dfg2.tail()
