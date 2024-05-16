@@ -27,8 +27,8 @@ dependencies:
   - mkdocs
   # CCDS END #
   - pip:
-    - unstructured>=0.10.30
+    # - unstructured>=0.10.30
     # Uncomment below line and comment the above to include all supported documents in the unstructured library
-    # - unstructured[all-docs]>=0.10.30
+    - unstructured[all-docs]>=0.10.30  # replace `all-docs` with `pdf` for pdf only files (for others, check documentation)
     - ollama>=0.1.7
     # - -e .
