@@ -10,3 +10,6 @@
 ## Minor
 - [ ] Add requirements.txt
 - [ ] Find a way to ignore loguru logs and coordinate it with builtin logger module
+
+## Features
+- [ ] Ability to insert via command line the maximum number of files to load
