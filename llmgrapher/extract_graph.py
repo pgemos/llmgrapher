@@ -20,6 +20,8 @@ from langchain_community.document_loaders import (
 from pathlib import Path
 from pyvis.network import Network
 
+# Local imports
+import config
 from helpers.df_helpers import df2Graph, documents2Dataframe, graph2Df
 
 # Logger setup
@@ -35,10 +37,8 @@ logging.basicConfig(
     ],
 )
 
-
-## Input data directory
-data_dir = "ag_news"
-inputdirectory = Path(f"./data/raw/input/{data_dir}")
+# Text loading
+inputdirectory = config.RAW_DATA_DIR
 ## This is where the output csv files will be written
 out_dir = data_dir
 outputdirectory = Path(f"./data/interim/output/{out_dir}")
