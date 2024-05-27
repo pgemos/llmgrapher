@@ -5,6 +5,9 @@
 # Old files
 *.old
 
+# Drafts
+draft.txt
+
 # Logs
 *.log
 logs/*
