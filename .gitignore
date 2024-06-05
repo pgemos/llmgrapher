@@ -8,8 +8,10 @@
 # Drafts
 draft.txt
 
-# Temporary Files
+# Temporary Files and Folders
 *.tmp
+tmp/
+temp/
 
 # Logs
 *.log
