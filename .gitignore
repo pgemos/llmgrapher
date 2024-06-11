@@ -10,8 +10,8 @@ draft.txt
 
 # Temporary Files and Folders
 *.tmp
-tmp/
-temp/
+*/tmp/*
+*/temp/*
 
 # Logs
 *.log
