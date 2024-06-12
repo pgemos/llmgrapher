@@ -32,4 +32,5 @@ dependencies:
     - unstructured[all-docs]>=0.10.30  # replace `all-docs` with `pdf` for pdf only files (for others, check documentation)
     - ollama>=0.1.7
     - newspaper4k>=0.9.3.1
+    - puremagic
     # - -e .
