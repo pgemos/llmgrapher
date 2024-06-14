@@ -52,5 +52,6 @@
 ## Ver. 0.0.3
 
 ### New Features
-- [ ] Have a standalone .py file that can be invoked from command-line and which can automatically load files in either `txt`, `html` or `pdf` form and extract (entity1, relatonship, entity2) triplets or produce an `html` file containing a graph visualization.
-- [ ] 
+- [ ] Have a standalone .py file that can be invoked from command-line, which can automatically load files in either `txt`, `html` or `pdf` form, extracting (entity1, relatonship, entity2) triplets and producing an `html` file containing a graph visualization.
+- [ ] Ability to keep downloaded matterial offline and check if already downloaded in order not to download again.
+    - [ ] (Optional) Have a download only mode.
