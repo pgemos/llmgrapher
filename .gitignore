@@ -13,6 +13,9 @@ draft.txt
 */tmp/*
 */temp/*
 
+# Draft Docs
+docs/todo/daily_tasks/*
+
 # Logs
 *.log
 logs/*
