@@ -2,13 +2,15 @@ import os
 import urllib
 import requests
 import mimetypes
+import magic
 
 from pathlib import Path
 from llmgrapher.logger import logger
+from tqdm.auto import tqdm
 
 # Create a set of known extensions
-extensions = set(ext for ext, _ in mimetypes.types_map.items())
-extensions = extensions | {'docx', 'pptx', 'xlsx'}  # add custom extensions
+EXTENSIONS = set(ext for ext, _ in mimetypes.types_map.items())
+EXTENSIONS = EXTENSIONS | {'.docx', '.pptx', '.xlsx'}  # add custom extensions
 
 def convert_to_file_uri(path):
     return Path(path).absolute().as_uri()
@@ -42,21 +44,27 @@ def is_path_or_uri(s):
     else:
         return None
 
-def guess_filetype(guess_obj: requests.Response | str | Path):
+def guess_filetype(obj: requests.Response | str | Path):
     """
     Guesses the file type of a file, given either the response object of the file to be downloaded via an HTTP request or
     the path to the file in local storage.
 
     Args:
-        guess_obj: Object from which the guess will be based
+        obj: Object from which the guess will be based
         
     Returns:
         the guessed file extension with a "." (e.x ".pdf")
     """
-    if type(guess_obj) is requests.Response:
-        # TODO
-    elif:
+    if type(obj) is requests.Response:
+        mime = guess_obj.headers['content-type']
+    elif type(obj) in (str, Path):
+        mime = magic.Magic(mime=True).from_file(obj)
+    else: 
+        raise ValueError(f"Invalid argument: {obj}")
 
+    guessed_ext = mimetypes.guess_extension(mime)
+    return guessed_ext
+    
 class ArgumentProcessor:
     
     def __init__(self, args, silent=True):
@@ -112,18 +120,64 @@ class Downloader:
     Downloader class for downloading files from a list of URLs and keeping track
     which already exist in order not to re-download them.
     """
-    def __init__(self, download_path, *urls):
-        self.download_path = download_path
+    def __init__(self, download_path, urls):
+        """
+        Initializes Downloader object.
+        
+        Args:
+            download_path: Path to download files.
+            urls: urls to download files from.
+        """
+        if not os.path.exists(download_path):
+            raise ValueError(f"Download path: `{download_path}` does not exist")
+        self.download_path = Path(download_path)
         self.urls = urls
 
-    def download(self, check_existing=True):
-        for url in self.urls:
-            filename = url.split("/")[-1]
-            file_path = os.path.join(self.download_path, filename)
+    def download(self, check_existing=True):  # check_updates=True (check hashsum - overwrite old)
+        """
+        Downloads the files defined by the urls of the initialized Downloader object.
+        
+        Args:
+            check_existing: Checks if any of the files have already been downloaded in order not to re-download them.
+        """
+        for url in tqdm(self.urls, "Downlading Files"):
+            file_exists = False
+            parsed_url = urllib.parse.urlparse(url)
+            url_path = Path(parsed_url.path)
+            file_path = self.download_path / url_path.name
 
             # Download the file only if it does not exist
-            if not os.path.exists(file_path):
-                Downloader.download_file(url, download_path)
+            if check_existing:
+                if os.path.exists(file_path):  # exact match search (name + extension)
+                    file_exists = True
+                else:  # exact match unsuccessful, maybe file extension is missing or it is wrong,
+                       # therefore, check for name of the file without extension
+                    downloads = os.listdir(self.download_path)
+                    for download in downloads:
+                        url_filename_splits = url_path.name.rsplit(".", maxsplit=1)
+                        download_filename_splits = download.rsplit(".", maxsplit=1)
+
+                        # First part is name of file
+                        remote_name = url_filename_splits[0]
+                        local_name = download_filename_splits[0]
+                        
+                        # If less than two splits (no dot found), set extension to empty string,
+                        # otherwise set it as the last split
+                        remote_ext = '' if len(url_filename_splits) < 2 else url_filename_splits[-1]
+                        local_ext = '' if len(download_filename_splits) < 2 else download_filename_splits[-1]
+                        
+                        # Configure filename to be checked. In case it is an unknown extension, the extension 
+                        # may possibly be part of the file, so add this too to the filename for comparison. Otherwise,
+                        # use only the name of the file for the comparison.
+                        remote_filename = remote_name if remote_ext in EXTENSIONS else remote_name + remote_ext
+                        local_filename = local_name if local_ext in EXTENSIONS else local_name + local_ext
+                        
+                        if remote_filename == local_filename:
+                            file_exists = True
+                            break
+                
+            if not file_exists:
+                Downloader.download_file(url, self.download_path)
 
     @staticmethod
     def download_file(url, save_path, guess_type=True, stream=False, chunk_size=None, ignore_errors=False):
@@ -165,38 +219,33 @@ class Downloader:
         # Get the file name from the URL
         filename = os.path.basename(url)
         _, ext = os.path.splitext(filename)
-    
+
+        # Handling missing or wrong file extension #
         if ext == "":  # file extension is missing
-            # Guess file type and get the extension
-            content_type = response.headers['content-type']
-            guessed_ext = mimetypes.guess_extension(content_type)
-    
+            guessed_ext = guess_filetype(response)
             if guessed_ext is not None:
                 ext = guessed_ext 
             # if guessed_ext is None, the file type could not be determined and another try to guess
             # it will be made after downloading the file, using python-magic
             filename += ext            
-        elif ext not in extensions: # possibly the file ending does not represent an extension
+        elif ext not in EXTENSIONS: # possibly the file ending does not represent an extension
             ext = ""  # set it to empty string in order to try the guess later using python-magic
-        else:
-            error_msg = f"Unexpected value for extension: `{ext}`"
-            if ignore_errors:
-                logger.warning(error_msg)
-            else:
-                raise ValueError(error_msg)
             
         # Save File #
-        
-        file_path = os.path.join(download_path, filename)
-        with open(save_path, "wb") as f:
+        file_path = os.path.join(save_path, filename)
+        with open(file_path, "wb") as f:
             if stream:
                 for chunk in response.iter_content(chunk_size):
                     f.write(chunk)
             else:
                 f.write(response.content)
 
-        # Try to guess extension by reading the file contents using python-magic
+        # Try to guess extension by reading the file contents using python-magic under-the-hood
         if ext == "":
-            m = magic.Magic(mime=True).from_file('temp.pdf.tmp')
+            guessed_ext = guess_filetype(file_path)
+            if guessed_ext is None:
+                logger.info(f"File {filename} has unknown file type")
+            else:
+                os.rename(file_path, file_path + guessed_ext)
         
         return True
