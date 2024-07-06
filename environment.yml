@@ -25,6 +25,7 @@ dependencies:
   - loguru
   - python-dotenv
   - mkdocs
+  - mkdocstrings
   # CCDS END #
   - pip:
     # - unstructured>=0.10.30
