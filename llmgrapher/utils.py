@@ -64,7 +64,8 @@ def guess_filetype(obj: requests.Response | str | Path):
 
     guessed_ext = mimetypes.guess_extension(mime)
     return guessed_ext
-    
+
+# TODO change name to FileLocationParser
 class ArgumentProcessor:
     
     def __init__(self, args, silent=True):
@@ -98,8 +99,9 @@ class ArgumentProcessor:
             print(f"Illegal Argument: {arg}")
             raise e
 
-        return uri, file_type
- 
+        return uri, file_type  # TODO: Remove file_type from return
+
+    # TODO: change to just parse
     def parse_arguments(self):
         """
         Parses the arguments into two lists. One containing the URIs of the
@@ -113,7 +115,7 @@ class ArgumentProcessor:
             uri, file_type = self._parse_argument(arg)
             uris.append(uri)
             file_types.append(file_type)
-        return uris, file_types
+        return uris, file_types  # TODO: Remove file_types from return
 
 class Downloader:
     """
