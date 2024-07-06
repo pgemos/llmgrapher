@@ -65,57 +65,61 @@ def guess_filetype(obj: requests.Response | str | Path):
     guessed_ext = mimetypes.guess_extension(mime)
     return guessed_ext
 
-# TODO change name to FileLocationParser
-class ArgumentProcessor:
+
+class FileLocationParser:
+    """Class used for parsing file locations (i.e URIs or file paths)"""
     
-    def __init__(self, args, silent=True):
-        self.args = args
+    def __init__(self, locs, silent=True):
+        """
+        Initializes FileLocationParser object.
+
+        locs:
+            locs: list of file locations as URIs and/or file paths
+            silent: If `True`, it ignores parse errors, else it throws exception.
+        
+        Returns:
+            initialized FileLocationParser object
+        """
+        self.locs = locs
         self.silent = silent
 
-    def _parse_argument(self, arg):
+    def _parse_loc(self, loc):
         """
-        Parses given argument into URI and file type.
+        Parses a given file location into a URI.
         
-        :param arg: argument to be parsed
-        :return: tuple of URI and file type
+        Args:
+            loc: file location to be parsed (accepts either URI or file path)
+        
+        Returns:
+            parsed URI
         """
         try:
             uri = None
-            arg_type = is_path_or_uri(arg)
-            if arg_type == "uri":
-                parsed_uri = urllib.parse.urlparse(arg)
-                file_path = parsed_uri.path
-                uri = arg
-            elif arg_type == "path":
-                file_path = arg
-                uri = convert_to_file_uri(file_path)
-            else: # Unsupported Argument - possibly nonexistent path
+            loc_type = is_path_or_uri(loc)
+            if loc_type == "uri":
+                uri = loc
+            elif loc_type == "path":
+                uri = convert_to_file_uri(loc)
+            else: # Unsupported File Location - possibly nonexistent path
                 if self.silent == False:
-                    raise ValueError(f"Unsupported Argument Type for argument: `{arg}`. Possibly nonexistent path.")
-                return None, None
-            file_type = Path(file_path).suffix[1:] # suffix excluding "."
-        
+                    raise ValueError(f"Unsupported File Location Type for location: `{loc}`. Possibly nonexistent path.")
+                return None, None        
         except Exception as e:
-            print(f"Illegal Argument: {arg}")
+            print(f"Illegal File Location: {loc}")
             raise e
 
-        return uri, file_type  # TODO: Remove file_type from return
+        return uri
 
-    # TODO: change to just parse
-    def parse_arguments(self):
+    def parse(self):
         """
-        Parses the arguments into two lists. One containing the URIs of the
-        arguments and one containing their file types.
+        Parses the file locations into URIs.
 
-        :return: tuple of two lists: URIs and file types
+        File locations can be either URIs or file paths.
+
+        Returns:
+            parsed URIs
         """
-        uris = []
-        file_types = []
-        for arg in self.args:
-            uri, file_type = self._parse_argument(arg)
-            uris.append(uri)
-            file_types.append(file_type)
-        return uris, file_types  # TODO: Remove file_types from return
+        return [self._parse_loc(loc) for loc in self.locs]
 
 class Downloader:
     """
