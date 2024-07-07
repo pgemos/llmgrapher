@@ -1,8 +1,10 @@
 """Command Line Interface Module for LLMGrapher."""
 
+import os
 import typer
 
 from pathlib import Path
+from urllib.parse import urlparse
 from typing import List, Optional, Annotated
 from rich import print
 
@@ -65,12 +67,18 @@ def run(
     file_list: Annotated[Optional[str], typer.Option(
         "--file-list", "-f",
         help="Path to the file containing the list of files (file paths and URLs) to parse and/or download."
-    )] = None
+    )] = None,
+    download_folder: Annotated[Optional[str], typer.Option(
+        "--download-folder", "-d",
+        help="Path to the folder where to download the files that are located on the web."
+    )] = ".",
 ) -> None:
     """
     Runs the LLMGrapher by parsing and/or downloading the files defined as arguments to the command line and in the
     file list, if it was set with the option `--file-list`.
     """
+    
+    # CLI Arguments and Options Handling #
     input_files = []
     if len(files) != 0:
         input_files.extend(files)
@@ -80,19 +88,54 @@ def run(
     if len(input_files) == 0:
         raise typer.BadParameter("No files where provided")
 
-    print(input_files)
     loc_parser = utils.FileLocationParser(input_files)
     loc_parser.parse()
     urls = loc_parser.get_urls()
     paths = loc_parser.get_paths()
-    uri_paths = loc_parser.get_paths(as_uri=True)
-    print(urls)
-    print(paths)
-    print(uri_paths)
+
+    # Downloading Files over the Web #
+    download(urls=urls, download_folder=download_folder)
 
 @app.command()
-def download(urls: List[str]) -> None:
-    print(urls)
+def download(
+    urls: Annotated[Optional[List[str]], typer.Argument(
+        help="URLs to download the files from"
+    )] = None,
+    url_list: Annotated[Optional[str], typer.Option(
+        "--url-list", "-u",
+        help='Path to the text file containing the urls of the files to be downloaded, separated by newline "\\n".'
+    )] = None,
+    download_folder: Annotated[Optional[str], typer.Option(
+        "--download-folder", "-d",
+        help="Path to the folder where to download the files that are located on the web."
+    )] = ".",
+) -> None:
+    
+    # CLI Arguments and Options Handling #
+    input_urls = []
+    if len(urls) != 0:
+        input_urls.extend(urls)
+    if url_list is not None:
+        with open(url_list, "r") as f:
+            input_urls.extend(f.read().splitlines())
+    if len(input_urls) == 0:
+        raise typer.BadParameter("No URLs where provided")
+
+    valid_urls = []
+    for url in input_urls:
+        if utils.is_valid_url(url):
+            valid_urls.append(url)
+        else:    
+            print(f"Invalid URL: '{url}'")
+
+    # Creating download folder if it does not exist
+    if not os.path.exists(download_folder):
+        os.makedirs(download_folder)
+        print(f"Created folder: {download_folder}")
+    
+    # Downloading Files over the Web #
+    downloader = utils.Downloader(download_folder, valid_urls)
+    downloader.download()
 
 if __name__ == "__main__":
     app()

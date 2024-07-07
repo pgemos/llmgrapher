@@ -1,10 +1,10 @@
 import os
-import urllib
 import requests
 import mimetypes
 import magic
 
 from pathlib import Path
+from urllib.parse import urlparse
 from llmgrapher.logger import logger
 from tqdm.auto import tqdm
 
@@ -35,7 +35,7 @@ def is_path_or_uri(s):
     :param s: string to be investigated
     :return: "path" if it's an existing path, "uri" if it's a URI or None if none of the above
     """
-    parsed_uri = urllib.parse.urlparse(s)
+    parsed_uri = urlparse(s)
     # only allow the bellow file supporting URIs
     if parsed_uri.scheme in ('http', 'https', 'ftp', 'file'):
         return 'uri'
@@ -43,6 +43,21 @@ def is_path_or_uri(s):
         return 'path'
     else:
         return None
+
+def is_valid_url(url):
+    """
+    Checks if the given URL is a valid one.
+    
+    CONVENTION: Only "http", "https" and "ftp" are the allowed schemes for valid URLs.
+
+    Returns:
+        True if valid URL, False otherwise
+    """
+    try:
+        parsed_url = urlparse(url)
+        return all([parsed_url.scheme in ("http", "https", "ftp"), parsed_url.netloc])
+    except AttributeError:
+        return False
 
 def guess_filetype(obj: requests.Response | str | Path):
     """
@@ -56,7 +71,7 @@ def guess_filetype(obj: requests.Response | str | Path):
         the guessed file extension with a "." (e.x ".pdf")
     """
     if type(obj) is requests.Response:
-        mime = guess_obj.headers['content-type']
+        mime = obj.headers['content-type']
     elif type(obj) in (str, Path):
         mime = magic.Magic(mime=True).from_file(obj)
     else: 
@@ -148,7 +163,7 @@ class FileLocationParser:
         """
         urls = []
         for uri in self.get_uris():
-            parsed_uri = urllib.parse.urlparse(uri)
+            parsed_uri = urlparse(uri)
             # Check if it is a URL
             if parsed_uri.scheme in ('http', 'https', 'ftp'):
                 urls.append(uri)
@@ -170,7 +185,7 @@ class FileLocationParser:
         """
         paths = []
         for uri in self.get_uris():
-            parsed_uri = urllib.parse.urlparse(uri)
+            parsed_uri = urlparse(uri)
             # Check if it is a file path
             if parsed_uri.scheme == 'file':
                 paths.append(uri if as_uri else parsed_uri.path)
@@ -181,17 +196,17 @@ class Downloader:
     Downloader class for downloading files from a list of URLs and keeping track
     which already exist in order not to re-download them.
     """
-    def __init__(self, download_path, urls):
+    def __init__(self, download_folder, urls):
         """
         Initializes Downloader object.
         
         Args:
-            download_path: Path to download files.
+            download_folder: Path to the folder to download files into.
             urls: urls to download files from.
         """
-        if not os.path.exists(download_path):
-            raise ValueError(f"Download path: `{download_path}` does not exist")
-        self.download_path = Path(download_path)
+        if not os.path.exists(download_folder):
+            raise ValueError(f"Download folder: `{download_folder}` does not exist")
+        self.download_folder = Path(download_folder)
         self.urls = urls
 
     def download(self, check_existing=True):  # check_updates=True (check hashsum - overwrite old)
@@ -203,9 +218,9 @@ class Downloader:
         """
         for url in tqdm(self.urls, "Downlading Files"):
             file_exists = False
-            parsed_url = urllib.parse.urlparse(url)
+            parsed_url = urlparse(url)
             url_path = Path(parsed_url.path)
-            file_path = self.download_path / url_path.name
+            file_path = self.download_folder / url_path.name
 
             # Download the file only if it does not exist
             if check_existing:
@@ -213,7 +228,7 @@ class Downloader:
                     file_exists = True
                 else:  # exact match unsuccessful, maybe file extension is missing or it is wrong,
                        # therefore, check for name of the file without extension
-                    downloads = os.listdir(self.download_path)
+                    downloads = os.listdir(self.download_folder)
                     for download in downloads:
                         url_filename_splits = url_path.name.rsplit(".", maxsplit=1)
                         download_filename_splits = download.rsplit(".", maxsplit=1)
@@ -238,7 +253,7 @@ class Downloader:
                             break
                 
             if not file_exists:
-                Downloader.download_file(url, self.download_path)
+                Downloader.download_file(url, self.download_folder)
 
     @staticmethod
     def download_file(url, save_path, guess_type=True, stream=False, chunk_size=None, ignore_errors=False):
@@ -260,11 +275,17 @@ class Downloader:
             float: True on succesfull download of the file or False on failure (assumes that ignore_errors is set to True)
         """
         # Execute get request #
-        
+
+        # Initialize headers to look like a browser, in order to avoid HTTP 403 Forbidden errors
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+        }
+        #TODO: add more sofisticated headers to reduce possibility of HTTP 403
+
         if stream:
-            response = requests.Session().get(url, stream=True)
+            response = requests.Session().get(url, headers=headers, stream=True) # TODO check if exists headers=headers
         else:
-            response = requests.get(url)
+            response = requests.get(url, headers=headers)
 
         try:
             response.raise_for_status()
