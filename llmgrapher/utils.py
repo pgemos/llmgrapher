@@ -83,6 +83,8 @@ class FileLocationParser:
         self.locs = locs
         self.silent = silent
 
+        self.uris = None
+
     def _parse_loc(self, loc):
         """
         Parses a given file location into a URI.
@@ -113,13 +115,66 @@ class FileLocationParser:
     def parse(self):
         """
         Parses the file locations into URIs.
+        """
+        self.uris = [self._parse_loc(loc) for loc in self.locs]
 
-        File locations can be either URIs or file paths.
+    def get_uris(self):
+        """
+        Gets the parsed URIs.
 
         Returns:
             parsed URIs
+
+        Raises:
+            ValueError: if the uris have not been parsed yet
         """
-        return [self._parse_loc(loc) for loc in self.locs]
+        if self.uris is None:
+            raise ValueError("URIs have not been parsed yet")
+        
+        return self.uris
+
+    def get_urls(self):
+        """
+        Gets the Web URLs (`http`, `https` or `ftp`) that exist in the parsed URIs.
+        
+        CONVENTION: URLs refer only to Web URLs and not local URLs. Therefore,
+                    the `file://` scheme is considerered a URI.
+
+        Returns:
+            the list of Web URLs extracted from the list of parsed URIs
+
+        Raises:
+            ValueError: if the uris have not been parsed yet
+        """
+        urls = []
+        for uri in self.get_uris():
+            parsed_uri = urllib.parse.urlparse(uri)
+            # Check if it is a URL
+            if parsed_uri.scheme in ('http', 'https', 'ftp'):
+                urls.append(uri)
+        return urls
+
+    
+    def get_paths(self, as_uri=False):
+        """
+        Gets the file paths of any `file://` URI that exist in the parsed URIs.
+
+        Args:
+            as_uri: dictates whether to return the paths as URIs or as file paths
+        
+        Returns:
+            the list of file paths extracted from the list of parsed URIs
+
+        Raises:
+            ValueError: if the uris have not been parsed yet
+        """
+        paths = []
+        for uri in self.get_uris():
+            parsed_uri = urllib.parse.urlparse(uri)
+            # Check if it is a file path
+            if parsed_uri.scheme == 'file':
+                paths.append(uri if as_uri else parsed_uri.path)
+        return paths
 
 class Downloader:
     """
