@@ -26,6 +26,9 @@ from llmgrapher import config
 from helpers.df_helpers import df2Graph, documents2Dataframe, graph2Df
 
 def main(args: List[str]):
+    pass
+    
+def old():
     logger = setup_logger()
     
 
