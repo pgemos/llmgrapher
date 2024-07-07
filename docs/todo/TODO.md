@@ -22,5 +22,13 @@
 - [ ] Add support for keeping track the hashsums of the files so if the online file has been updated,
       download it and overwrite the old one.
 
+## Super Minor
+- [ ] Compare Makefile of new CCDS in GitHub with current one and take features from it.
+
+# Future
+- [ ] Select the LLM to use for the prompt. Ask user to download it if necessary.
+- [ ] (Super hard, find a way to customize prompt results by having the user modify part of the prompt that dictates how the
+      resulting graph will be.
+
 ## Features
 - [ ] Ability to insert via command line the maximum number of files to load
