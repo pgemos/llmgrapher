@@ -274,8 +274,8 @@ class Downloader:
                         
                         # If less than two splits (no dot found), set extension to empty string,
                         # otherwise set it as the last split
-                        remote_ext = '' if len(url_filename_splits) < 2 else url_filename_splits[-1]
-                        local_ext = '' if len(download_filename_splits) < 2 else download_filename_splits[-1]
+                        remote_ext = '' if len(url_filename_splits) < 2 else "." + url_filename_splits[-1]
+                        local_ext = '' if len(download_filename_splits) < 2 else "." + download_filename_splits[-1]
                         
                         # Configure filename to be checked. In case it is an unknown extension, the extension 
                         # may possibly be part of the file, so add this too to the filename for comparison. Otherwise,
