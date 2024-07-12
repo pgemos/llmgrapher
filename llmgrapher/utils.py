@@ -2,6 +2,7 @@ import os
 import requests
 import mimetypes
 import magic
+import newspaper
 
 from pathlib import Path
 from urllib.parse import urlparse
@@ -11,6 +12,40 @@ from tqdm.auto import tqdm
 # Create a set of known extensions
 EXTENSIONS = set(ext for ext, _ in mimetypes.types_map.items())
 EXTENSIONS = EXTENSIONS | {'.docx', '.pptx', '.xlsx'}  # add custom extensions
+
+PREFERRED_LANGUAGE = 'en-US,en'
+
+# Default HTTP Request Headers to look like a browser in order to avoid HTTP 403 Forbidden errors #
+
+# Includes more header items, looking more convincing as a browser
+HEADERS_VERBOSE = {
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'accept-language': f'{PREFERRED_LANGUAGE};q=0.9',
+    'cache-control': 'max-age=0',
+    'sec-ch-ua': '"Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"',
+    'sec-ch-ua-arch': '"x86"',
+    'sec-ch-ua-bitness': '"64"',
+    'sec-ch-ua-full-version': '"115.0.5790.110"',
+    'sec-ch-ua-full-version-list': '"Not/A)Brand";v="99.0.0.0", "Google Chrome";v="115.0.5790.110", "Chromium";v="115.0.5790.110"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-model': '""',
+    'sec-ch-ua-platform': 'Windows',
+    'sec-ch-ua-platform-version': '15.0.0',
+    'sec-ch-ua-wow64': '?0',
+    'sec-fetch-dest': 'document',
+    'sec-fetch-mode': 'navigate',
+    'sec-fetch-site': 'same-origin',
+    'sec-fetch-user': '?1',
+    'upgrade-insecure-requests': '1',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+}
+
+# Sometimes, headers minimal wokrs mbetter? TODO
+HEADERS_MINIMAL = {
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+}
+
+HEADERS = HEADERS_MINIMAL
 
 def convert_to_file_uri(path):
     return Path(path).absolute().as_uri()
@@ -68,7 +103,7 @@ def guess_filetype(obj: requests.Response | str | Path):
         obj: Object from which the guess will be based
         
     Returns:
-        the guessed file extension with a "." (e.x ".pdf")
+        the guessed file extension with a "." (e.x ".pdf") (`None` if it cannot guess the extension)
     """
     if type(obj) is requests.Response:
         mime = obj.headers['content-type']
@@ -275,26 +310,34 @@ class Downloader:
             float: True on succesfull download of the file or False on failure (assumes that ignore_errors is set to True)
         """
         # Execute get request #
-
-        # Initialize headers to look like a browser, in order to avoid HTTP 403 Forbidden errors
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-        }
-        #TODO: add more sofisticated headers to reduce possibility of HTTP 403
-
-        if stream:
-            response = requests.Session().get(url, headers=headers, stream=True) # TODO check if exists headers=headers
-        else:
-            response = requests.get(url, headers=headers)
-
-        try:
-            response.raise_for_status()
-        except Exception as e:
-            if ignore_errors:
-                logger.info(e)
-                return False
-            else:
-                raise e
+        article = None
+        get_response = ( lambda url, stream, headers: requests.Session().get(url, headers=headers, stream=True) if stream
+                                     else requests.get(url, headers=headers) )
+        response = get_response(url, stream, HEADERS_MINIMAL)
+        
+        if response.status_code == 403:  # HTTP 403 Forbidden error probably due to web scraping block
+            # retry with verbose headers
+            response = get_response(url, stream, HEADERS_VERBOSE)
+            if response.status_code == 403:  # Again HTTP 403 Forbidden error               
+                try:  # Try using newspaper4k
+                    article = newspaper.article(url)  # fetch and parse HTML from URL
+                except Exception as e:
+                    if ignore_errors:
+                        logger.info(e)
+                        return False
+                    else:
+                        raise e
+                    
+        # In case of other error than HTTP 403 Forbidden
+        if not response.ok and article is None:
+            try:
+                response.raise_for_status()
+            except Exception as e:
+                if ignore_errors:
+                    logger.info(e)
+                    return False
+                else:
+                    raise e
 
         # Handle file extension #
         
@@ -304,11 +347,14 @@ class Downloader:
 
         # Handling missing or wrong file extension #
         if ext == "":  # file extension is missing
-            guessed_ext = guess_filetype(response)
+            if response.ok:  # Try to guess the file extension using only the response headers
+                guessed_ext = guess_filetype(response)
+            else:
+                guessed_ext = None
             if guessed_ext is not None:
                 ext = guessed_ext 
-            # if guessed_ext is None, the file type could not be determined and another try to guess
-            # it will be made after downloading the file, using python-magic
+            # if guessed_ext is None, the file type could not be determined and another try to guess it
+            # will be made after downloading the file, using python-magic
             filename += ext            
         elif ext not in EXTENSIONS: # possibly the file ending does not represent an extension
             ext = ""  # set it to empty string in order to try the guess later using python-magic
@@ -316,11 +362,14 @@ class Downloader:
         # Save File #
         file_path = os.path.join(save_path, filename)
         with open(file_path, "wb") as f:
-            if stream:
-                for chunk in response.iter_content(chunk_size):
-                    f.write(chunk)
+            if article is None:
+                if stream:
+                    for chunk in response.iter_content(chunk_size):
+                        f.write(chunk)
+                else:
+                    f.write(response.content)
             else:
-                f.write(response.content)
+                f.write(article.html.encode())
 
         # Try to guess extension by reading the file contents using python-magic under-the-hood
         if ext == "":
