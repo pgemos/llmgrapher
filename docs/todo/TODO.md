@@ -32,3 +32,4 @@
 
 ## Features
 - [ ] Ability to insert via command line the maximum number of files to load
+- [ ] FEATURE_NOTE: In case it is preferred to keep files with same name but different file extensions, it can be put in the backlog to change current implemantation. In that case however, the parsed text files will include the file extension in their name (e.x document.txt.txt, document.pdf.txt)
