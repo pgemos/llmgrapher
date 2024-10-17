@@ -12,6 +12,7 @@ draft.txt
 *.tmp
 */tmp/*
 */temp/*
+temp/*
 
 # Draft Docs
 docs/todo/daily_tasks/*
