@@ -94,7 +94,9 @@ def run(
     paths = loc_parser.get_paths()
 
     # Downloading Files over the Web #
-    download(urls=urls, download_folder=download_folder)
+    downloaded_files = download(urls=urls, download_folder=download_folder)
+    # TODO: test if works return from cli function
+    # TODO: check also if something is printed in the CLI or CLI documentation
 
 @app.command()
 def download(
@@ -109,7 +111,8 @@ def download(
         "--download-folder", "-d",
         help="Path to the folder where to download the files that are located on the web."
     )] = ".",
-) -> None:
+) -> List[str]:  # returns the list of the files that have been downloaded (the ones that already existed too)
+    # TODO: Are docstrings used in cli functions?
     
     # CLI Arguments and Options Handling #
     input_urls = []
@@ -135,7 +138,12 @@ def download(
     
     # Downloading Files over the Web #
     downloader = utils.Downloader(download_folder, valid_urls)
-    downloader.download()
+    downloaded_files, already_existing = downloader.download()
+
+    if all(already_existing):
+        print("All requested files existed. No need to download.")
+
+    return downloaded_files
 
 if __name__ == "__main__":
     app()

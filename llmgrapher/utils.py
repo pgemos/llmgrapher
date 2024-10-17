@@ -250,8 +250,18 @@ class Downloader:
         
         Args:
             check_existing: Checks if any of the files have already been downloaded in order not to re-download them.
+                            NOTE: Checks are done via file name, excluding file extension (if any). Therefore files
+                                  of different type are considered the same (e.x. document.txt and document.pdf). In such
+                                  scenarios, the local file is kept instead of the remote one. In order to keep the remote
+                                  file, one has to either set check_existing=False or individualy download that file via
+                                  download_file() or any other method.
+                            
+        Returns:
+            Tuple[List[str], List[bool]]: List of the paths of the downloaded files
         """
-        for url in tqdm(self.urls, "Downlading Files"):
+        downloaded_files = []  # list of downloaded files
+        already_existing = []  # list signaling if the downloaded_files already existed or not
+        for url in tqdm(self.urls, "Downloading Files"):
             file_exists = False
             parsed_url = urlparse(url)
             url_path = Path(parsed_url.path)
@@ -263,19 +273,19 @@ class Downloader:
                     file_exists = True
                 else:  # exact match unsuccessful, maybe file extension is missing or it is wrong,
                        # therefore, check for name of the file without extension
-                    downloads = os.listdir(self.download_folder)
-                    for download in downloads:
-                        url_filename_splits = url_path.name.rsplit(".", maxsplit=1)
-                        download_filename_splits = download.rsplit(".", maxsplit=1)
+                    local_files = os.listdir(self.download_folder)
+                    for local_file in local_files:
+                        remote_filename_splits = url_path.name.rsplit(".", maxsplit=1)
+                        local_filename_splits = local_file.rsplit(".", maxsplit=1)
 
                         # First part is name of file
-                        remote_name = url_filename_splits[0]
-                        local_name = download_filename_splits[0]
+                        remote_name = remote_filename_splits[0]
+                        local_name = local_filename_splits[0]
                         
                         # If less than two splits (no dot found), set extension to empty string,
-                        # otherwise set it as the last split
-                        remote_ext = '' if len(url_filename_splits) < 2 else "." + url_filename_splits[-1]
-                        local_ext = '' if len(download_filename_splits) < 2 else "." + download_filename_splits[-1]
+                        # otherwise set it as the second split
+                        remote_ext = '' if len(remote_filename_splits) < 2 else "." + remote_filename_splits[1]
+                        local_ext = '' if len(local_filename_splits) < 2 else "." + local_filename_splits[1]
                         
                         # Configure filename to be checked. In case it is an unknown extension, the extension 
                         # may possibly be part of the file, so add this too to the filename for comparison. Otherwise,
@@ -288,7 +298,12 @@ class Downloader:
                             break
                 
             if not file_exists:
-                Downloader.download_file(url, self.download_folder)
+                local_file = Downloader.download_file(url, self.download_folder)
+                
+            downloaded_files.append(os.path.join(self.download_folder, local_file))
+            already_existing.append(file_exists)
+
+        return downloaded_files, already_existing
 
     @staticmethod
     def download_file(url, save_path, guess_type=True, stream=False, chunk_size=None, ignore_errors=False):
@@ -307,7 +322,7 @@ class Downloader:
             If it is set to True and error happens, it returns False.
 
         Returns:
-            float: True on succesfull download of the file or False on failure (assumes that ignore_errors is set to True)
+            str: Path to the file download location or `None` on download failure (assumes that ignore_errors is set to True)
         """
         # Execute get request #
         article = None
@@ -324,7 +339,7 @@ class Downloader:
                 except Exception as e:
                     if ignore_errors:
                         logger.info(e)
-                        return False
+                        return None
                     else:
                         raise e
                     
@@ -335,7 +350,7 @@ class Downloader:
             except Exception as e:
                 if ignore_errors:
                     logger.info(e)
-                    return False
+                    return None
                 else:
                     raise e
 
@@ -378,5 +393,6 @@ class Downloader:
                 logger.info(f"File {filename} has unknown file type")
             else:
                 os.rename(file_path, file_path + guessed_ext)
+                file_path += guessed_ext
         
-        return True
+        return file_path
