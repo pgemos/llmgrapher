@@ -17,9 +17,9 @@ requirements:
 	conda env update --name $(PROJECT_NAME) --file environment.yml --prune
 	
 ## Install `unstructured` python library apt dependencies
-.PHONY: apt_dependencies
-apt_dependencies:
-	sudo apt-get install libmagic-dev poppler-utils tesseract-ocr pandoc libxml2 libxslt1-dev
+#.PHONY: apt_dependencies
+#apt_dependencies:
+#	sudo apt-get install libmagic-dev poppler-utils tesseract-ocr pandoc libxml2 libxslt1-dev
 
 ## Delete all compiled Python files
 .PHONY: clean
