@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "llmgrapher"
-version = "0.0.1"
+version = "0.0.1_thesis"
 description = "LLM based text to graph"
 authors = [
   { name = "pgemos" },
