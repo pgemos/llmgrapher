@@ -4,6 +4,8 @@
 
 LLM based text to graph
 
+*The licences of WikiGraphs and of the datasets used in it are described under `wikigraphs/README.md`*
+
 ## Project Organization
 
 ```
