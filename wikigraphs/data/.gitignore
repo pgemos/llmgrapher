@@ -1,0 +1,13 @@
+# Keep only folder structure and necessary .git* files
+
+# ignore all files...
+*
+
+# ...except folders...
+!*/              
+
+# ...and .gitkeep...
+!.gitkeep
+
+# ...and .gitignore files
+!.gitignore
