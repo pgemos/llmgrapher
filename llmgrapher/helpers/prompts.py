@@ -32,9 +32,7 @@ def extractConcepts(prompt: str, metadata={}, model="mistral-openorca:latest"):
     return result
 
 
-def graphPrompt(input: str, metadata={}, model="mistral-openorca:latest", silent=True):
-    if model == None:
-        model = "mistral-openorca:latest"
+def graphPrompt(input_text: str, metadata={}, model="llama3:latest", silent=True, json_parse=True):
 
     # model_info = client.show(model=model)
     # print( chalk.blue(model_info))
@@ -62,15 +60,17 @@ def graphPrompt(input: str, metadata={}, model="mistral-openorca:latest", silent
         "]"
     )
 
-    USER_PROMPT = f"context: ```{input}``` \n\n output: "
+    USER_PROMPT = f"context: ```{input_text}``` \n\n output: "
     response_dict = ollama.generate(model=model, system=SYS_PROMPT, prompt=USER_PROMPT)
     response = response_dict["response"]
+    if not json_parse:
+        return response
     try:
         result = json.loads(response)
         result = [dict(item, **metadata) for item in result]
     except json.decoder.JSONDecodeError as e:
         if not silent:
-            print("\n\n JSON Parse ERROR ### Input : ", input[:50], "...\n\n")
+            print("\n\n JSON Parse ERROR ### Input : ", input_text[:50], "...\n\n")
         result = None
     except Exception as e:
         print("Unexpected Exception:\n", e)
